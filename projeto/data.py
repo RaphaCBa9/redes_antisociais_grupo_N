@@ -1,21 +1,19 @@
-import json, os, zipfile
+import os, zipfile
      
-EDGES = json.load(open('./data/edges.json'))
-ORDERS = json.load(open('./data/orders.json')).values()
-
+     
 if os.path.isfile('./data/departments.zip'):
     with zipfile.ZipFile('./data/departments.zip', 'r') as zip_ref:
         zip_ref.extractall('./data')
-        with open('./data/departments.csv', 'r') as file:
-            next(file)
-            DEPARTMENTS = {line.strip().split(',')[0]: line.strip().split(',')[1] for line in file}
+with open('./data/departments.csv', 'r') as file:
+    next(file)
+    DEPARTMENTS = {line.strip().split(',')[0]: line.strip().split(',')[1] for line in file}
         
 if os.path.isfile('./data/aisles.zip'):
     with zipfile.ZipFile('./data/aisles.zip', 'r') as zip_ref:
         zip_ref.extractall('./data')
-        with open('./data/aisles.csv', 'r') as file:
-            next(file)
-            AISLES = {line.strip().split(',')[0]: line.strip().split(',')[1] for line in file}
+with open('./data/aisles.csv', 'r') as file:
+    next(file)
+    AISLES = {line.strip().split(',')[0]: line.strip().split(',')[1] for line in file}
 
 
 if os.path.isfile('./data/products.zip'):
