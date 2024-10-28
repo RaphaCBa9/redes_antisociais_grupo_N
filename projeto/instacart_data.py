@@ -109,7 +109,7 @@ def get_products(reload:bool=False) -> dict[str, dict[str, str|int]]:
         
         products = {}
         for product_id, data in products_data.items():
-            products_data[product_id]['PRC'] = data['purchased more than once']/data['total purchases']
+            products_data[product_id]['PRC'] = data['purchased more than once']/data['number of users purchased']
             product_data = PRODUCTS.get(product_id, {'name': 'Error', 'aisle': 'other', 'department': 'other'})
             products[product_id] = {**data, **product_data}
                     
