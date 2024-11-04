@@ -13,16 +13,18 @@ def get_aisles() -> dict[str, str]:
 def get_order_products(reload:bool=False) -> dict[str, list[str]]:
     if not os.path.isfile('./data/order_products.json') or reload:
         order_products = {}
-        print('Fazendo varredura no arquivo de produtos dos pedidos...')
-        with open('./data/order_products.csv', 'r') as file:
-            next(file)
-            for line in file:
-                order_id, product_id, _, _ = line.strip().split(',')
-
-                if order_id not in order_products.keys():
-                    order_products[order_id] = [product_id]
-                else:
-                    order_products[order_id].append(product_id)
+        files = ['order_products_prior.csv', 'order_products_train.csv']
+        for file in files:
+            print(f'Fazendo varredura do arquivo {file} ...')
+            with open(f'./data/{file}', 'r') as f:
+                next(f)
+                for line in f:
+                    order_id, product_id, _, _ = line.strip().split(',')
+                    
+                    if order_id not in order_products.keys():
+                        order_products[order_id] = [product_id]
+                    else:
+                        order_products[order_id].append(product_id)
         print('Salvando dados dos produtos dos pedidos...')
         json.dump(order_products, open('./data/order_products.json', 'w'), indent=4)
         return order_products
@@ -61,6 +63,7 @@ def get_user_products(reload:bool=False) -> dict[str, dict[str, int]]:
                 if order_id in order_products.keys():
                     for product_id in order_products[order_id]:
                         user_products[user_id][product_id] = user_products[user_id].get(product_id, 0) + 1
+                # print(f'order {order_id} não encontrada (usuario: {user_id})')
         
         print('Salvando dados dos produtos dos usuários...')
         json.dump(user_products, open('./data/user_products.json', 'w', encoding='utf8'), indent=4)
@@ -143,8 +146,11 @@ def gen_edges_data(order_products:dict[str, list[str]], filename:str='edges', re
     return json.load(open(f'./data/{filename}.json', 'r', encoding='utf8'))
 
 
-def gen_edges_csv(edges:dict[str, int], threshold:int=0) -> None:
-    with open('./data/edges.csv', 'w') as file:
+def gen_edges_csv(edgesfilename:str, edges:dict[str, int], threshold:int=0) -> None:
+    n = 0
+    with open(f'./data/{edgesfilename}.csv', 'w') as file:
         for edge, value in edges.items():
             if value >= threshold:
                 file.write(f'{edge},{value}\n')
+                n += 1
+    print(f'{n} arestas geradas com o threshold de {threshold}')
