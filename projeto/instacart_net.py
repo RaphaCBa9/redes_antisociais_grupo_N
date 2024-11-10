@@ -43,7 +43,7 @@ def gen_net(edgesfilename:str):
     
     with open(f'./data/{edgesfilename}.csv') as file:
         for line in file:
-            a, b, v = [int(x) for x in line.strip().replace('\n', '').split(',')]
+            a, b, *v = [(int(x) if '.' not in x else float(x)) for x in line.strip().replace('\n', '').split(',')]
             vA = get_or_add_vertex(g, a)
             vB = get_or_add_vertex(g, b)
         

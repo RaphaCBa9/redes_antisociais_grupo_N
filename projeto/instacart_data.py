@@ -49,6 +49,21 @@ def get_user_orders(reload:bool=False) -> dict[str, list[str]]:
         return user_orders
     print('Carregando dados dos pedidos dos usuários...')
     return json.load(open('./data/user_orders.json', 'r', encoding='utf8'))
+
+def get_order_user(reload:bool=False) -> dict[str, str]:
+    if not os.path.exists('./data/order_user.json') or reload:
+        order_user = {}
+        print('Fazendo varredura no arquivo de pedidos...')
+        with open('./data/orders.csv', encoding='utf8') as f:
+            next(f)
+            for line in f:
+                order_id, user_id, _ , _, _, _, _ = line.split(',')
+                order_user[order_id] = user_id
+        print('Salvando dados dos pedidos dos usuários...')
+        json.dump(order_user, open('./data/order_user.json', 'w', encoding='utf8'), indent=4)
+        return order_user
+    print('Carregando dados dos pedidos dos usuários...')
+    return json.load(open('./data/order_user.json', 'r', encoding='utf8'))
     
 def get_user_products(reload:bool=False) -> dict[str, dict[str, int]]:
     if not os.path.exists('./data/user_products.json') or reload:
@@ -124,33 +139,46 @@ def get_products(reload:bool=False) -> dict[str, dict[str, str|int]]:
 
 def gen_edges_data(order_products:dict[str, list[str]], filename:str='edges', reload:bool=False) -> dict[str, int]:
     if not os.path.isfile(f'./data/{filename}.json') or reload:
+        order_user = get_order_user()
+
         edges = {}
+        
         t = time.time()
-        print('Gerando dados das arestas...')
-        for i, order in enumerate(order_products.values()):
-            for productA in order:
-                for productB in order:
+        print('Coletando dados das arestas...')
+        for i, data in enumerate(order_products.items()):
+            order, products = data
+            for productA in products:
+                for productB in products:
                     if productA != productB: 
                         A, B = sorted([productA, productB])
                         edge = f'{A},{B}'
-                        edges[edge] = edges.get(edge, 0)+1
-            
+                        edges[edge] = edges.get(edge, [0, set()])
+                        edges[edge][0] += 1
+                        edges[edge][1].add(order_user[order])
+           
             if time.time()-t > 10:
                 t = time.time()
                 print(f'{i/len(order_products)*100:.4f}%')
+        
+        print('Calculando dados das arestas...')
+        for edge, data in edges.items():
+            weight, users = data
+            len_users = len(users)
+            edges[edge] = [weight/len_users, weight, len_users]
+             
         print('Ordenando arestas por peso...')
-        edges = dict(sorted(edges.items(), key=lambda x: x[1], reverse=True))
+        edges = dict(sorted(edges.items(), key=lambda x: x[1][2], reverse=True))
         print('Salvando dados das arestas...')
         json.dump(edges, open(f'./data/{filename}.json', 'w'), indent=4)
         return edges
     return json.load(open(f'./data/{filename}.json', 'r', encoding='utf8'))
 
 
-def gen_edges_csv(edgesfilename:str, edges:dict[str, int], threshold:int=0) -> None:
+def gen_edges_csv(edgesfilename:str, edges:dict[str, int], id:int=0, threshold:int=0) -> None:
     n = 0
     with open(f'./data/{edgesfilename}.csv', 'w') as file:
-        for edge, value in edges.items():
-            if value >= threshold:
-                file.write(f'{edge},{value}\n')
+        for edge, values in edges.items():
+            if values[id] >= threshold:
+                file.write(f'{edge},{values[0]},{values[1]},{values[2]}\n')
                 n += 1
     print(f'{n} arestas geradas com o threshold de {threshold}')
